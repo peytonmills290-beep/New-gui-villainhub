@@ -7539,21 +7539,38 @@ end)
 -- =========================
 -- WORLD PAGE (Teleport)
 -- =========================
-local TeleportSection = WorldPage:Section({
-    Name = "Teleport",
-    Description = "Teleport to locations",
-    Icon = "123944728972740"
-})
-
+-- Teleport Locations Table
 local TeleportLocations = {
-    ["Bank"] = CFrame.new(0, 5, 0),
-    ["Gun Store"] = CFrame.new(10, 5, 0)
+    ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
+    ["Black Market 💹"] = CFrame.new(671, 6, 251),
+    ["DealerShip 🚗"] = CFrame.new(738, 6, 439),
+    ["DealerShip Apartments 🌇"] = CFrame.new(717, 5, 548),
+    ["Clothes Store 👕"] = CFrame.new(-197, 6, -74),
+    ["Box Job Apartments 📦"] = CFrame.new(-527, 6, 142),
+    ["Bank 💳"] = CFrame.new(-47, 6, -340),
+    ["Fake ID Seller 🎫"] = CFrame.new(219, 6, -331),
+    ["DOA Turf 🔴"] = CFrame.new(-335, 6, -415),
+    ["OGZ Turf 🟣"] = CFrame.new(125, 6, -466),
+    ["YGZ Turf 🟢"] = CFrame.new(3, 6, 223),
+    ["Studio 🎙"] = CFrame.new(522, 6, -26),
+    ["Shoe Store 👟"] = CFrame.new(525, 7, -184),
+    ["Second Gun Store 🔫"] = CFrame.new(-459, 6, 328),
+    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
+
+-- Teleport Dropdown
+local TeleportSection = WorldPage:Section({Name = "Teleport", Description = "Teleport to South Bronx locations"})
 
 TeleportSection:Dropdown({
     Name = "Teleport",
     Default = "None",
     Options = (function()
+        local t = {"None"}
+        for name,_ in pairs(TeleportLocations) do
+            table.insert(t, name)
+        end
+        return t
+    end)(),
     Callback = function(Value)
         if Value ~= "None" then
             local cf = TeleportLocations[Value]
