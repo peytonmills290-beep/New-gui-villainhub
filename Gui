@@ -7482,7 +7482,19 @@ local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 -- =========================
 -- SELF PAGE
 -- =========================
-for Index = 1, 2 do 
+-- =========================
+-- SELF FLAGS
+-- =========================
+getgenv().InfiniteStamina = false
+getgenv().SpeedEnabled = false
+getgenv().WalkSpeed = 16
+getgenv().InstantInteract = false
+getgenv().ClickDelete = false
+
+-- =========================
+-- SELF SECTION
+-- =========================
+for Index = 1, 2 do
     local Section = SelfPage:Section({
         Name = "LOCAL PLAYER MODS "..Index,
         Description = "Internal modifications for self",
@@ -7490,17 +7502,114 @@ for Index = 1, 2 do
         Side = Index
     })
 
-    -- Infinite Stamina Toggle
-    local Toggle = Section:Toggle({
+    -- Infinite Stamina
+    Section:Toggle({
         Name = "Infinite Stamina",
-        Flag = "stamina",
+        Flag = "InfiniteStamina",
         Default = false,
         Callback = function(Value)
             getgenv().InfiniteStamina = Value
-            print("Infinite Stamina: "..tostring(Value))
+        end
+    })
+
+    -- Speed Toggle
+    local SpeedToggle = Section:Toggle({
+        Name = "Speed",
+        Flag = "Speed",
+        Default = false,
+        Callback = function(Value)
+            getgenv().SpeedEnabled = Value
+        end
+    })
+
+    -- Speed Slider (MAX 20)
+    SpeedToggle:Settings(250):Slider({
+        Name = "WalkSpeed",
+        Flag = "WalkSpeed",
+        Min = 1,
+        Max = 20,
+        Default = 16,
+        Callback = function(Value)
+            getgenv().WalkSpeed = Value
+        end
+    })
+
+    -- Instant Interact
+    Section:Toggle({
+        Name = "Instant Interact",
+        Flag = "InstantInteract",
+        Default = false,
+        Callback = function(Value)
+            getgenv().InstantInteract = Value
+        end
+    })
+
+    -- Click Delete (Tap or Click)
+    Section:Toggle({
+        Name = "Click Delete",
+        Flag = "ClickDelete",
+        Default = false,
+        Callback = function(Value)
+            getgenv().ClickDelete = Value
         end
     })
 end
+
+-- =========================
+-- LOGIC LOOPS
+-- =========================
+task.spawn(function()
+    while task.wait(0.2) do
+        local char = Players.LocalPlayer.Character
+        if not char then continue end
+
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then continue end
+
+        -- Infinite Stamina
+        if getgenv().InfiniteStamina then
+            if hum:FindFirstChild("Stamina") then
+                hum.Stamina.Value = hum.Stamina.MaxValue
+            end
+        end
+
+        -- Speed
+        if getgenv().SpeedEnabled then
+            hum.WalkSpeed = getgenv().WalkSpeed
+        end
+    end
+end)
+
+-- Instant Interact
+task.spawn(function()
+    while task.wait(0.3) do
+        if getgenv().InstantInteract then
+            for _,v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") then
+                    v.HoldDuration = 0
+                    v.RequiresLineOfSight = false
+                end
+            end
+        end
+    end
+end)
+
+-- Click Delete (PC + Mobile)
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(input, gp)
+    if gp or not getgenv().ClickDelete then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        local target = Players.LocalPlayer:GetMouse().Target
+        if target then
+            target:Destroy()
+        end
+    end
+end)
+
+
+
 
 -- =========================
 -- COMBAT PAGE
@@ -7537,9 +7646,22 @@ task.spawn(function()
 end)
 
 -- =========================
--- WORLD PAGE (Teleport)
+-- TELEPORT METHOD (ADD THIS)
 -- =========================
--- Teleport Locations Table
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
+
+local function smartTeleport(cf)
+    if not cf then return end
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2)
+end
+
+
+-- =========================
+-- SOUTH BRONX LOCATIONS
+-- =========================
 local TeleportLocations = {
     ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
     ["Black Market 💹"] = CFrame.new(671, 6, 251),
@@ -7558,26 +7680,32 @@ local TeleportLocations = {
     ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
 
--- Teleport Dropdown
-local TeleportSection = WorldPage:Section({Name = "Teleport", Description = "Teleport to South Bronx locations"})
 
-TeleportSection:Dropdown({
+-- =========================
+-- TELEPORT LISTBOX (WORLD PAGE)
+-- =========================
+local TeleportSection = WorldPage:Section({
     Name = "Teleport",
-    Default = "None",
-    Options = (function()
-        local t = {"None"}
-        for name,_ in pairs(TeleportLocations) do
-            table.insert(t, name)
-        end
-        return t
-    end)(),
+    Description = "South Bronx Teleports"
+})
+
+local LocationNames = {}
+for name,_ in pairs(TeleportLocations) do
+    table.insert(LocationNames, name)
+end
+
+table.sort(LocationNames)
+
+TeleportSection:Listbox({
+    Flag = "TeleportList",
+    Size = 275,
+    Items = LocationNames,
+    Multi = false,
     Callback = function(Value)
-        if Value ~= "None" then
-            local cf = TeleportLocations[Value]
-            if cf and char then
-                char:SetPrimaryPartCFrame(cf)
-                print("Teleported to:", Value)
-            end
+        local cf = TeleportLocations[Value]
+        if cf then
+            smartTeleport(cf)
+            print("Teleported to:", Value)
         end
     end
 })
