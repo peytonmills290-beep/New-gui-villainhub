@@ -7489,66 +7489,82 @@ local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 -- =========================
 -- SELF SECTION
 -- =========================
+-- ==============================
+-- SELF SECTION: Speed + Instant Interact + Infinite Stamina
+-- ==============================
+
+-- 1️⃣ Make sure SelfPage exists
+local SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
+
+-- 2️⃣ Create a section inside SelfPage
 local SelfSection = SelfPage:Section({
-    Name = "Self Mods",
-    Description = "Internal modifications for self",
+    Name = "Player Mods",
+    Description = "Mods for your character",
     Icon = "123944728972740",
+    Side = 1
 })
 
--- Infinite Stamina
-SelfSection:Toggle({
-    Name = "Infinite Stamina",
-    Flag = "stamina",
-    Default = false,
-    Callback = function(Value)
-        getgenv().InfiniteStamina = Value
-        print("Infinite Stamina: "..tostring(Value))
-    end
-})
-
--- Self Section Speed Toggle + Slider (max 20)
+-- 3️⃣ SPEED TOGGLE + SLIDER
 local SpeedToggle = SelfSection:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
-    Callback = function(value)
-        getgenv().SpeedEnabled = value
-        print("Speed Enabled:", value)
+    Callback = function(Value)
+        getgenv().SpeedEnabled = Value
+        if not Value then
+            local playerChar = game.Players.LocalPlayer.Character
+            if playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
+                playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- reset default
+            end
+        end
+        print("Speed Enabled:", Value)
     end
 })
 
-local SpeedSlider = SelfSection:Slider({
+local SpeedSliderSettings = SpeedToggle:Settings(200)
+SpeedSliderSettings:Slider({
     Name = "Speed Value",
+    Flag = "SpeedValue",
     Min = 1,
     Max = 20,
     Default = 16,
-    Decimal = 1,
-    Callback = function(value)
-        getgenv().SpeedValue = value
-        print("Speed Value set to:", value)
+    Decimals = 1,
+    Suffix = "studs/s",
+    Callback = function(Value)
+        getgenv().SpeedValue = Value
+        local playerChar = game.Players.LocalPlayer.Character
+        if getgenv().SpeedEnabled and playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
+            playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
+        end
+        print("Speed set to:", Value)
     end
 })
 
--- Loop to apply speed
+-- Loop to continuously apply speed safely
 task.spawn(function()
     while true do
         task.wait(0.1)
-        if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
-            char:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
+        if getgenv().SpeedEnabled then
+            local playerChar = game.Players.LocalPlayer.Character
+            if playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
+                playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
+            end
         end
     end
 end)
--- Instant Interact Toggle
-local InstantInteractToggle = Section:Toggle({
+
+-- 4️⃣ INSTANT INTERACT TOGGLE
+local InteractToggle = SelfSection:Toggle({
     Name = "Instant Interact",
     Flag = "InstantInteract",
     Default = false,
-    Callback = function(value)
-        getgenv().InstantInteract = value
-        print("Instant Interact:", value)
+    Callback = function(Value)
+        getgenv().InstantInteract = Value
+        print("Instant Interact:", Value)
     end
 })
 
+-- Loop to continuously apply Instant Interact
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -7557,6 +7573,29 @@ task.spawn(function()
                 if prompt:IsA("ProximityPrompt") then
                     prompt.HoldDuration = 0
                 end
+            end
+        end
+    end
+end)
+
+-- 5️⃣ INFINITE STAMINA TOGGLE
+local StaminaToggle = SelfSection:Toggle({
+    Name = "Infinite Stamina",
+    Flag = "InfiniteStamina",
+    Default = false,
+    Callback = function(Value)
+        getgenv().InfiniteStamina = Value
+        print("Infinite Stamina:", Value)
+    end
+})
+
+-- Loop to continuously apply Infinite Stamina
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if getgenv().InfiniteStamina and char and char:FindFirstChildOfClass("Humanoid") then
+            if char:FindFirstChild("Stamina") then
+                char.Stamina.Value = char.Stamina.MaxValue
             end
         end
     end
