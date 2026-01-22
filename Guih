@@ -7700,12 +7700,14 @@ CombatSection:Button({
 -- TELEPORT LOCATIONS
 -- =========================
 -- Load Orion teleport module
-local MrDarkyModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"))()
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
 
--- Teleport function
 local function smartTeleport(cf)
+    if not cf then return end
     MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay for server to settle
+    task.wait(0.2)
 end
 
 -- South Bronx locations
