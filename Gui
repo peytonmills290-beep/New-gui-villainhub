@@ -7478,99 +7478,6 @@ local CombatPage = Window:Page({Name = "Combat", Icon = "140016863627496"})
 
 Window:Category("Utilities & Settings")
 local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
-
-
--- =========================
--- PLAYER TELEPORT (MAX 20) | PlayersPage
--- =========================
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Section inside PlayersPage
-local PlayerTeleportSection = PlayersPage:Section({
-    Name = "Teleport to Player",
-    Description = "Select a player and teleport (max 20 players shown)"
-})
-
--- Variables
-local SelectedPlayer = nil
-local PlayerNames = {}
-
--- Function to refresh the list
-local function RefreshPlayerList()
-    table.clear(PlayerNames)
-
-    local count = 0
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(PlayerNames, plr.Name)
-            count += 1
-        end
-        if count >= 20 then break end -- max 20 players
-    end
-
-    table.sort(PlayerNames)
-    PlayerListbox:RefreshOptions(PlayerNames) -- update the Listbox
-end
-
--- Connect refresh to join/leave
-Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(RefreshPlayerList)
-
--- =========================
--- TELEPORT METHOD
--- =========================
-local MrDarkyModule = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
-))()
-
-local function smartTeleport(cf)
-    MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay for server
-end
-
--- =========================
--- Player Listbox
--- =========================
-local PlayerListbox = PlayerTeleportSection:Listbox({
-    Flag = "PlayerTeleportList",
-    Size = 260,
-    Items = PlayerNames,
-    Multi = false,
-    Callback = function(Value)
-        SelectedPlayer = Value
-        print("Selected:", Value)
-    end
-})
-
--- =========================
--- Teleport Button
--- =========================
-PlayerTeleportSection:Button({
-    Name = "Teleport to Selected Player",
-    Callback = function()
-        if not SelectedPlayer then
-            warn("No player selected")
-            return
-        end
-
-        local target = Players:FindFirstChild(SelectedPlayer)
-        if target
-            and target.Character
-            and target.Character:FindFirstChild("HumanoidRootPart") then
-
-            smartTeleport(target.Character.HumanoidRootPart.CFrame)
-            print("Teleported to:", SelectedPlayer)
-        else
-            warn("Target not valid")
-        end
-    end
-})
-
--- Initial refresh
-RefreshPlayerList()
-
 -- =========================
 -- SELF PAGE
 -- =========================
@@ -7737,19 +7644,109 @@ task.spawn(function()
     end
 end)
 
+
+-- =========================
+-- PLAYER TELEPORT (MAX 20) | PlayersPage
+-- =========================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Section inside PlayersPage
+local PlayerTeleportSection = PlayersPage:Section({
+    Name = "Teleport to Player",
+    Description = "Select a player and teleport (max 20 players shown)"
+})
+
+-- Variables
+local SelectedPlayer = nil
+local PlayerNames = {}
+
+-- Function to refresh the list
+local function RefreshPlayerList()
+    table.clear(PlayerNames)
+
+    local count = 0
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(PlayerNames, plr.Name)
+            count += 1
+        end
+        if count >= 20 then break end -- max 20 players
+    end
+
+    table.sort(PlayerNames)
+    PlayerListbox:RefreshOptions(PlayerNames) -- update the Listbox
+end
+
+-- Connect refresh to join/leave
+Players.PlayerAdded:Connect(RefreshPlayerList)
+Players.PlayerRemoving:Connect(RefreshPlayerList)
+
+-- =========================
+-- TELEPORT METHOD
+-- =========================
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
+
+local function smartTeleport(cf)
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2) -- small delay for server
+end
+
+-- =========================
+-- Player Listbox
+-- =========================
+local PlayerListbox = PlayerTeleportSection:Listbox({
+    Flag = "PlayerTeleportList",
+    Size = 260,
+    Items = PlayerNames,
+    Multi = false,
+    Callback = function(Value)
+        SelectedPlayer = Value
+        print("Selected:", Value)
+    end
+})
+
+-- =========================
+-- Teleport Button
+-- =========================
+PlayerTeleportSection:Button({
+    Name = "Teleport to Selected Player",
+    Callback = function()
+        if not SelectedPlayer then
+            warn("No player selected")
+            return
+        end
+
+        local target = Players:FindFirstChild(SelectedPlayer)
+        if target
+            and target.Character
+            and target.Character:FindFirstChild("HumanoidRootPart") then
+
+            smartTeleport(target.Character.HumanoidRootPart.CFrame)
+            print("Teleported to:", SelectedPlayer)
+        else
+            warn("Target not valid")
+        end
+    end
+})
+
+-- Initial refresh
+RefreshPlayerList()
+
 -- =========================
 -- TELEPORT METHOD (ADD THIS)
 -- =========================
+-- Teleport Section
 -- =========================
--- SOUTH BRONX TELEPORT | WorldPage
--- =========================
-
 local TeleportSection = WorldPage:Section({
     Name = "Teleport",
-    Description = "Teleport to South Bronx locations"
+    Description = "Teleport to South Bronx locations",
 })
 
--- Teleport locations
+-- All South Bronx locations with emojis
 local TeleportLocations = {
     ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
     ["Black Market 💹"] = CFrame.new(671, 6, 251),
@@ -7765,53 +7762,28 @@ local TeleportLocations = {
     ["Studio 🎙"] = CFrame.new(522, 6, -26),
     ["Shoe Store 👟"] = CFrame.new(525, 7, -184),
     ["Second Gun Store 🔫"] = CFrame.new(-459, 6, 328),
-    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
+    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173),
 }
 
--- Listbox for teleport
-local TeleportListbox = TeleportSection:Listbox({
-    Flag = "TeleportList",
+-- Create Listbox with locations
+local LocationList = TeleportSection:Listbox({
+    Flag = "TeleportLocations",
+    Default = "Select Location",
     Size = 275,
-    Items = {},
+    Items = {}, -- initially empty, will fill below
     Multi = false,
-    Callback = function(Value)
-        SelectedLocation = Value
-        print("Selected location:", Value)
-    end
-})
-
--- Smart teleport function
-local MrDarkyModule = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
-))()
-
-local function smartTeleport(cf)
-    MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay for server
-end
-
--- Button to teleport
-TeleportSection:Button({
-    Name = "Teleport to Selected Location",
-    Callback = function()
-        if not SelectedLocation then
-            warn("No location selected")
-            return
-        end
-
-        local cf = TeleportLocations[SelectedLocation]
+    Callback = function(selected)
+        local cf = TeleportLocations[selected]
         if cf and char then
             smartTeleport(cf)
-            print("Teleported to:", SelectedLocation)
-        else
-            warn("Location not valid")
+            print("Teleported to:", selected)
         end
     end
 })
 
--- Populate Listbox with locations
+-- Fill the Listbox dynamically
 for name,_ in pairs(TeleportLocations) do
-    TeleportListbox:Add(name)
+    LocationList:Add(name)
 end
 
 -- =========================
