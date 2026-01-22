@@ -7468,8 +7468,8 @@ end)
 -- Setup GUI Pages
 -- =========================
 Window:Category("Misc & Miscellaneous")
-local MoneyPage = Window:Page({Name = "Money", Icon = "85500115785722", Columns = 1})
 local SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
+local MoneyPage = Window:Page({Name = "Money", Icon = "85500115785722", Columns = 1})
 local WorldPage = Window:Page({Name = "World", Icon = "123944728972740"})
 
 Window:Category("Combat & Visuals")
