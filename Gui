@@ -7461,33 +7461,23 @@ Window:Category("Utilities & Settings")
 local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 
 for Index = 1, 2 do 
-    local Section = SelfPage:Section({Name = "LOCAL PLAYER MODS"..Index, Description = "Internal modifications for self", Icon = "123944728972740", Side = Index})
+    local Section = SelfPage:Section({
+        Name = "LOCAL PLAYER MODS "..Index,
+        Description = "Internal modifications for self",
+        Icon = "123944728972740",
+        Side = Index
+    })
 
-local Toggle = Section:Toggle({
-    Name = "Infinite Stamina",
-    Flag = "stamina",
-    Default = false,
-    Callback = function(Value)
-        getgenv().InfiniteStamina = Value -- store toggle state globally
-        if Value then
-            print("Infinite Stamina Enabled")
-        else
-            print("Infinite Stamina Disabled")
+    local Toggle = Section:Toggle({
+        Name = "Infinite Stamina",
+        Flag = "stamina",
+        Default = false,
+        Callback = function(Value)
+            getgenv().InfiniteStamina = Value
+            print("Infinite Stamina: "..tostring(Value))
         end
-    end
-})
-
--- Loop to enforce infinite stamina
-task.spawn(function()
-    while task.wait(0.1) do
-        if getgenv().InfiniteStamina then
-            local char = game.Players.LocalPlayer.Character
-            if char and char:FindFirstChildOfClass("Humanoid") then
-                char:FindFirstChildOfClass("Humanoid").Stamina = 100
-            end
-        end
-    end
-end)
+    })
+end
 
 Window:Init()
 getgenv().Library = Library
