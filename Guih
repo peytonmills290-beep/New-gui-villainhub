@@ -7705,7 +7705,12 @@ local MrDarkyModule = loadstring(game:HttpGet(
 ))()
 
 local function smartTeleport(cf)
-    if not cf then return end
+    if not cf then
+        warn("Teleport failed: CFrame is nil")
+        return
+    end
+
+    print("Teleporting to:", cf.Position)
     MrDarkyModule.ExemptTeleport(cf.Position)
     task.wait(0.2)
 end
@@ -7750,13 +7755,22 @@ local LocationList = TeleportSection:Listbox({
 
 -- Button to teleport
 TeleportSection:Button({
-    Name = "Teleport to selected location",
+Name = "Teleport to Selected Location",
     Callback = function()
-        local selectedLocation = LocationList:GetValue()
-        if selectedLocation == "" or not TeleportLocations[selectedLocation] then
-            print("No location selected or invalid")
+        if not SelectedLocation then
+            warn("No location selected")
             return
         end
+
+        local cf = TeleportLocations[SelectedLocation]
+        if not cf then
+            warn("Invalid location:", SelectedLocation)
+            return
+        end
+
+        smartTeleport(cf)
+    end
+})
 
         if char and char:FindFirstChild("HumanoidRootPart") then
             smartTeleport(TeleportLocations[selectedLocation])
