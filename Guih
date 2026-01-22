@@ -7635,12 +7635,16 @@ CombatSection:Button({
 -- =========================
 -- TELEPORT LOCATIONS
 -- =========================
-local TeleportSection = WorldPage:Section({
-    Name = "Teleport",
-    Description = "Select a South Bronx location and teleport"
-})
+-- Load Orion teleport module
+local MrDarkyModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"))()
 
--- Your South Bronx locations
+-- Teleport function
+local function smartTeleport(cf)
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2) -- small delay for server to settle
+end
+
+-- South Bronx locations
 local TeleportLocations = {
     ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
     ["Black Market 💹"] = CFrame.new(671, 6, 251),
@@ -7659,48 +7663,46 @@ local TeleportLocations = {
     ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
 
-local SelectedLocation
+-- World page section
+local TeleportSection = WorldPage:Section({
+    Name = "Teleport",
+    Description = "Teleport to South Bronx locations",
+    Icon = "123944728972740" -- replace with your icon if needed
+})
 
--- Load the teleport module (same as in your Orion script)
-local MrDarkyModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"))()
-
--- Teleport function you can use anywhere
-local function smartTeleport(cf)
-    -- Exempt teleport using the module
-    MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay so server settles after teleport
-end
-
--- Listbox to select location
+-- Listbox for selecting location
 local LocationList = TeleportSection:Listbox({
-    Flag = "TeleportList",
-    Default = "Select Location",
+    Flag = "SelectedLocation",
+    Default = "",
     Size = 275,
-    Items = {},
+    Items = {}, -- will fill dynamically
     Multi = false,
-    Callback = function(Value)
-        SelectedLocation = Value
-        print("Selected location:", SelectedLocation)
+    Callback = function(value)
+        print("Selected location:", value)
     end
 })
 
--- Populate the listbox
-for name,_ in pairs(TeleportLocations) do
-    LocationList:Add(name)
-end
-
--- Teleport button
+-- Button to teleport
 TeleportSection:Button({
     Name = "Teleport to selected location",
     Callback = function()
-        if SelectedLocation and TeleportLocations[SelectedLocation] and char then
-            smartTeleport(TeleportLocations[SelectedLocation])
-            print("Teleported to:", SelectedLocation)
-        else
-            warn("No location selected or character missing")
+        local selectedLocation = LocationList:GetValue()
+        if selectedLocation == "" or not TeleportLocations[selectedLocation] then
+            print("No location selected or invalid")
+            return
+        end
+
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            smartTeleport(TeleportLocations[selectedLocation])
+            print("Teleported to:", selectedLocation)
         end
     end
 })
+
+-- Fill the listbox with all locations
+for name,_ in pairs(TeleportLocations) do
+    LocationList:Add(name)
+end
 
 -- =========================
 -- AUTO FARM PAGE
