@@ -7511,7 +7511,7 @@ SelfSection:Toggle({
 -- Example: local Section = SelfSection
 
 -- Speed toggle
-local SpeedToggle = Section:Toggle({
+local Toggle = SelfSection:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
