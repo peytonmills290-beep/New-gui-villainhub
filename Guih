@@ -7775,20 +7775,44 @@ local AutoFarmSection = MoneyPage:Section({Name = "Auto Farm", Description = "Co
 
 -- BOX FARM
 getgenv().BoxFarm = false
+
 AutoFarmSection:Toggle({
     Name = "Box Autofarm",
     Default = false,
     Callback = function(v) getgenv().BoxFarm = v end
 })
 
+-- Services / player
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Load Orion teleport (same module as Marsh)
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
+
+local function smartTeleport(cf)
+    if not cf then return end
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2)
+end
+
+local function getChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+-- Locations / Proximity Prompts
 local boxStart = CFrame.new(-552.0956,3.53,-84.45)
 local boxTarget = CFrame.new(-401.14,3.36,-70.97)
 local boxProx1 = workspace.PlaceHere.Attachment.ProximityPrompt
 local boxProx2 = workspace.cratetruck2.Model.ClickBox.Attachment.ProximityPrompt
+
 boxProx1.HoldDuration = 0
 boxProx2.HoldDuration = 0
 
+-- Equip crate function
 local function equipCrate()
+    local char = getChar()
     local bp = player.Backpack
     if bp:FindFirstChild("Crate") then
         bp.Crate.Parent = char
@@ -7798,20 +7822,30 @@ local function equipCrate()
     return false
 end
 
+-- MAIN LOOP
 task.spawn(function()
     while true do
+        local char = getChar()
         if getgenv().BoxFarm then
-            -- teleport and collect box
-            char:SetPrimaryPartCFrame(boxStart)
+            -- Teleport to start using Orion method
+            smartTeleport(boxStart)
+
+            -- Collect first box
             fireproximityprompt(boxProx1,0)
+
+            -- Move to target (instant or tween if you want)
             char:SetPrimaryPartCFrame(boxTarget)
-            if equipCrate() then fireproximityprompt(boxProx2,0) end
+
+            -- Collect crate at target
+            if equipCrate() then
+                fireproximityprompt(boxProx2,0)
+            end
         end
         task.wait(0.1)
     end
 end)
 
--- MARSH FARM BETA FIXED (SellPrompt removed)
+-- MARSH FARM BETA (working version, uses Orion teleport)
 getgenv().MarshFarm = false
 
 AutoFarmSection:Toggle({
@@ -7820,9 +7854,21 @@ AutoFarmSection:Toggle({
     Callback = function(v) getgenv().MarshFarm = v end
 })
 
+-- Services & player
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
+
+-- Load Orion teleport
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
+
+local function smartTeleport(cf)
+    if not cf then return end
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2)
+end
 
 local function getChar()
     return player.Character or player.CharacterAdded:Wait()
@@ -7872,36 +7918,32 @@ task.spawn(function()
     while true do
         local char = getChar()
         if getgenv().MarshFarm then
-            -- Buy products
-            if char:FindFirstChild("HumanoidRootPart") then
-                char:SetPrimaryPartCFrame(BuyProductsCF)
-            end
+            -- Buy products using Orion teleport
+            smartTeleport(BuyProductsCF)
             for _, item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
-                StoreRemote:FireServer(item)
-                local timer = 0
-                while not player.Backpack:FindFirstChild(item) and timer < 1 do
-                    task.wait(0.1)
-                    timer = timer + 0.1
+                for i = 1, 1 do -- currently buying 1 of each; change 1 -> 10 if you want 10
+                    StoreRemote:FireServer(item)
+                    local timer = 0
+                    while not player.Backpack:FindFirstChild(item) and timer < 1 do
+                        task.wait(0.1)
+                        timer = timer + 0.1
+                    end
                 end
             end
 
             -- Buy house
-            if char:FindFirstChild("HumanoidRootPart") then
-                char:SetPrimaryPartCFrame(BuyHouseCF)
-                task.wait(0.2)
-                fireproximityprompt(HousePrompt,0)
-            end
+            smartTeleport(BuyHouseCF)
+            task.wait(0.2)
+            fireproximityprompt(HousePrompt,0)
 
             -- Cooking
-            if char:FindFirstChild("HumanoidRootPart") then
-                char:SetPrimaryPartCFrame(CookPotCF)
-            end
+            smartTeleport(CookPotCF)
             if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(20) end
             if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0) end
             if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0) task.wait(61) end
             if EquipItem("Empty Bag") then fireproximityprompt(CookPrompt,0) end
 
-            -- Equip Marsh Bag only (no sell prompt)
+            -- Equip Marsh Bag only
             EquipMarshBag()
         end
         task.wait(0.1)
