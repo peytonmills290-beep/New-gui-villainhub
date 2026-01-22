@@ -7473,7 +7473,7 @@ local MoneyPage = Window:Page({Name = "Money", Icon = "85500115785722", Columns 
 local WorldPage = Window:Page({Name = "World", Icon = "123944728972740"})
 
 Window:Category("Combat & Visuals")
-local PlayersPage = Window:Page({Name = "Players", Icon = "134236649319095"})
+local espPage = Window:Page({Name = "esp", Icon = "131808384905233"})
 local CombatPage = Window:Page({Name = "Combat", Icon = "140016863627496"})
 
 Window:Category("Utilities & Settings")
@@ -7638,105 +7638,68 @@ CombatSection:Button({
 })
 
 -- =========================
--- WORLD PAGE TELEPORT
+-- TELEPORT LOCATIONS
 -- =========================
-local WorldSection = WorldPage:Section({Name = "Teleport to Locations"})
+local TeleportSection = WorldPage:Section({
+    Name = "Teleport",
+    Description = "Select a South Bronx location and teleport"
+})
 
+-- Your South Bronx locations
 local TeleportLocations = {
-    ["Main Gun Store 🔫"] = CFrame.new(219,6,-158),
-    ["Black Market 💹"] = CFrame.new(671,6,251),
-    ["DealerShip 🚗"] = CFrame.new(738,6,439),
-    ["DealerShip Apartments 🌇"] = CFrame.new(717,5,548),
-    ["Clothes Store 👕"] = CFrame.new(-197,6,-74),
-    ["Box Job Apartments 📦"] = CFrame.new(-527,6,142),
-    ["Bank 💳"] = CFrame.new(-47,6,-340),
-    ["Fake ID Seller 🎫"] = CFrame.new(219,6,-331),
-    ["DOA Turf 🔴"] = CFrame.new(-335,6,-415),
-    ["OGZ Turf 🟣"] = CFrame.new(125,6,-466),
-    ["YGZ Turf 🟢"] = CFrame.new(3,6,223),
-    ["Studio 🎙"] = CFrame.new(522,6,-26),
-    ["Shoe Store 👟"] = CFrame.new(525,7,-184),
-    ["Second Gun Store 🔫"] = CFrame.new(-459,6,328),
-    ["Exclusive Gun Store 🔫"] = CFrame.new(1131,4,173)
+    ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
+    ["Black Market 💹"] = CFrame.new(671, 6, 251),
+    ["DealerShip 🚗"] = CFrame.new(738, 6, 439),
+    ["DealerShip Apartments 🌇"] = CFrame.new(717, 5, 548),
+    ["Clothes Store 👕"] = CFrame.new(-197, 6, -74),
+    ["Box Job Apartments 📦"] = CFrame.new(-527, 6, 142),
+    ["Bank 💳"] = CFrame.new(-47, 6, -340),
+    ["Fake ID Seller 🎫"] = CFrame.new(219, 6, -331),
+    ["DOA Turf 🔴"] = CFrame.new(-335, 6, -415),
+    ["OGZ Turf 🟣"] = CFrame.new(125, 6, -466),
+    ["YGZ Turf 🟢"] = CFrame.new(3, 6, 223),
+    ["Studio 🎙"] = CFrame.new(522, 6, -26),
+    ["Shoe Store 👟"] = CFrame.new(525, 7, -184),
+    ["Second Gun Store 🔫"] = CFrame.new(-459, 6, 328),
+    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
 
-local TeleList = WorldSection:Listbox({
-    Flag = "TeleportLocations",
-    Default = "None",
+local SelectedLocation
+
+-- Listbox to select location
+local LocationList = TeleportSection:Listbox({
+    Flag = "TeleportList",
+    Default = "Select Location",
     Size = 275,
     Items = {},
     Multi = false,
     Callback = function(Value)
-        if char and TeleportLocations[Value] then
-            -- teleport method
-            local cf = TeleportLocations[Value]
-            char:SetPrimaryPartCFrame(cf)
-            print("Teleported to:", Value)
-        end
+        SelectedLocation = Value
+        print("Selected location:", SelectedLocation)
     end
 })
 
--- Fill the listbox with location names automatically
+-- Populate the listbox
 for name,_ in pairs(TeleportLocations) do
-    TeleList:Add(name)
+    LocationList:Add(name)
 end
 
--- Teleport Button
-WorldTeleportSection:Button({
-    Name = "Teleport to Selected Location",
+-- Teleport button
+TeleportSection:Button({
+    Name = "Teleport to selected location",
     Callback = function()
-        if SelectedLocation and SelectedLocation ~= "None" and char then
+        if SelectedLocation and TeleportLocations[SelectedLocation] and char then
+            -- Teleport method
             local cf = TeleportLocations[SelectedLocation]
-            smartTeleport(cf) -- using your teleport method
-            print("Teleported to:", SelectedLocation)
-        end
-    end
-})
-
--- =========================
--- PLAYERS PAGE
--- =========================
-local PlayersSection = PlayersPage:Section({Name = "Teleport to Players"})
-local MaxPlayers = 20
-
-local PlayerList = PlayersSection:Listbox({
-    Flag = "PlayersList",
-    Default = "None",
-    Size = 275,
-    Items = {},
-    Multi = false
-})
-
--- Update player list dynamically every 5 seconds
-task.spawn(function()
-    while true do
-        PlayerList:Clear()
-        local count = 0
-        for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-            if plr ~= player then
-                PlayerList:Add(plr.Name)
-                count += 1
-            end
-            if count >= MaxPlayers then break end
-        end
-        task.wait(5)
-    end
-end)
-
-PlayersSection:Button({
-    Name = "Teleport to selected player",
-    Callback = function()
-        if ConfigSelected then
-            local targetPlayer = game:GetService("Players"):FindFirstChild(ConfigSelected)
-            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and char then
-                local targetCF = targetPlayer.Character.HumanoidRootPart.CFrame
-                char:SetPrimaryPartCFrame(targetCF)
-                print("Teleported to:", ConfigSelected)
+            -- If you use your MrDarkyModule.ExemptTeleport method:
+            if MrDarkyModule and MrDarkyModule.ExemptTeleport then
+                MrDarkyModule.ExemptTeleport(cf.Position)
             else
-                warn("Player not available or character missing")
+                char:SetPrimaryPartCFrame(cf)
             end
+            print("Teleported to:", SelectedLocation)
         else
-            warn("No player selected")
+            warn("No location selected or character missing")
         end
     end
 })
@@ -7744,19 +7707,17 @@ PlayersSection:Button({
 -- =========================
 -- AUTO FARM PAGE
 -- =========================
-local AutoFarmSection = MoneyPage:Section({Name = "Auto Farm"})
+-- =========================
+-- AUTO FARM
+-- =========================
+local AutoFarmSection = MoneyPage:Section({Name = "Auto Farm", Description = "Collect money and items automatically"})
 
--- =========================
--- BOX FARM TOGGLE
--- =========================
+-- BOX FARM
 getgenv().BoxFarm = false
-AutoFarmSection:AddToggle({
+AutoFarmSection:Toggle({
     Name = "Box Autofarm",
     Default = false,
-    Callback = function(Value)
-        getgenv().BoxFarm = Value
-        print("Box Farm:", Value)
-    end
+    Callback = function(v) getgenv().BoxFarm = v end
 })
 
 local boxStart = CFrame.new(-552.0956,3.53,-84.45)
@@ -7777,29 +7738,24 @@ local function equipCrate()
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while true do
         if getgenv().BoxFarm then
+            -- teleport and collect box
             char:SetPrimaryPartCFrame(boxStart)
             fireproximityprompt(boxProx1,0)
             char:SetPrimaryPartCFrame(boxTarget)
-            if equipCrate() then
-                fireproximityprompt(boxProx2,0)
-            end
+            if equipCrate() then fireproximityprompt(boxProx2,0) end
         end
+        task.wait(0.1)
     end
 end)
 
--- =========================
--- MARSH FARM TOGGLE
--- =========================
+-- MARSH FARM BETA
 getgenv().MarshFarm = false
-AutoFarmSection:AddToggle({
+AutoFarmSection:Toggle({
     Name = "Marsh Farm Beta",
     Default = false,
-    Callback = function(Value)
-        getgenv().MarshFarm = Value
-        print("Marsh Farm:", Value)
-    end
+    Callback = function(v) getgenv().MarshFarm = v end
 })
 
 local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
@@ -7832,16 +7788,16 @@ local function EquipMarshBag()
 end
 
 task.spawn(function()
-    while task.wait(0.1) do
+    while true do
         if getgenv().MarshFarm then
             -- Buy products
             char:SetPrimaryPartCFrame(BuyProductsCF)
             for _,item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
                 StoreRemote:FireServer(item)
-                local timer = 0
-                while not player.Backpack:FindFirstChild(item) and timer < 1 do
+                local timer=0
+                while not player.Backpack:FindFirstChild(item) and timer<1 do
                     task.wait(0.1)
-                    timer = timer + 0.1
+                    timer=timer+0.1
                 end
             end
 
@@ -7861,6 +7817,7 @@ task.spawn(function()
             char:SetPrimaryPartCFrame(BuyProductsCF)
             if EquipMarshBag() and SellPrompt then fireproximityprompt(SellPrompt,0) end
         end
+        task.wait(0.1)
     end
 end)
 
