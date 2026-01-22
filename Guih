@@ -7724,21 +7724,25 @@ task.spawn(function()
 end)
 
 PlayersSection:Button({
-    Name = "Teleport to Selected Player",
+    Name = "Teleport to selected player",
     Callback = function()
-        local targetName = PlayerList:Get()
-        local target = game:GetService("Players"):FindFirstChild(targetName)
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            char:SetPrimaryPartCFrame(target.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0))
-            print("Teleported to player:", targetName)
+        if ConfigSelected then
+            local targetPlayer = game:GetService("Players"):FindFirstChild(ConfigSelected)
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and char then
+                local targetCF = targetPlayer.Character.HumanoidRootPart.CFrame
+                char:SetPrimaryPartCFrame(targetCF)
+                print("Teleported to:", ConfigSelected)
+            else
+                warn("Player not available or character missing")
+            end
         else
-            print("Player not available or character not loaded.")
+            warn("No player selected")
         end
     end
 })
 
 -- =========================
--- MONEY / AUTO FARM PAGE
+-- AUTO FARM PAGE
 -- =========================
 local AutoFarmSection = MoneyPage:Section({Name = "Auto Farm"})
 
@@ -7746,9 +7750,8 @@ local AutoFarmSection = MoneyPage:Section({Name = "Auto Farm"})
 -- BOX FARM TOGGLE
 -- =========================
 getgenv().BoxFarm = false
-local BoxToggle = AutoFarmSection:Toggle({
+AutoFarmSection:AddToggle({
     Name = "Box Autofarm",
-    Flag = "BoxFarm",
     Default = false,
     Callback = function(Value)
         getgenv().BoxFarm = Value
@@ -7774,10 +7777,8 @@ local function equipCrate()
 end
 
 task.spawn(function()
-    while true do
-        task.wait(0.1)
+    while task.wait(0.1) do
         if getgenv().BoxFarm then
-            -- teleport and collect boxes
             char:SetPrimaryPartCFrame(boxStart)
             fireproximityprompt(boxProx1,0)
             char:SetPrimaryPartCFrame(boxTarget)
@@ -7792,9 +7793,8 @@ end)
 -- MARSH FARM TOGGLE
 -- =========================
 getgenv().MarshFarm = false
-local MarshToggle = AutoFarmSection:Toggle({
+AutoFarmSection:AddToggle({
     Name = "Marsh Farm Beta",
-    Flag = "MarshFarm",
     Default = false,
     Callback = function(Value)
         getgenv().MarshFarm = Value
@@ -7832,17 +7832,16 @@ local function EquipMarshBag()
 end
 
 task.spawn(function()
-    while true do
-        task.wait(0.1)
+    while task.wait(0.1) do
         if getgenv().MarshFarm then
             -- Buy products
             char:SetPrimaryPartCFrame(BuyProductsCF)
             for _,item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
                 StoreRemote:FireServer(item)
-                local timer=0
-                while not player.Backpack:FindFirstChild(item) and timer<1 do
+                local timer = 0
+                while not player.Backpack:FindFirstChild(item) and timer < 1 do
                     task.wait(0.1)
-                    timer=timer+0.1
+                    timer = timer + 0.1
                 end
             end
 
