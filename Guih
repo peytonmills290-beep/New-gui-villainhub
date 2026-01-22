@@ -7506,43 +7506,62 @@ SelfSection:Toggle({
     end
 })
 
--- Speed Toggle with Slider (max 20)
+-- Self Section Speed Toggle + Slider (max 20)
 local SpeedToggle = SelfSection:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
-    Callback = function(Value)
-        getgenv().SpeedEnabled = Value
-        print("Speed Enabled:", Value)
+    Callback = function(value)
+        getgenv().SpeedEnabled = value
+        print("Speed Enabled:", value)
     end
 })
-local SpeedSettings = SpeedToggle:Settings(300)
-for i = 1, 15 do
-    SpeedSettings:Slider({
-        Name = "Speed",
-        Flag = "Speed"..i,
-        Min = 1,
-        Max = 20,
-        Suffix = "km/h",
-        Default = 0,
-        Decimals = 1,
-        Callback = function(Value)
-            getgenv().SpeedValue = Value
-            print("Speed Value:", Value)
+
+local SpeedSlider = SelfSection:Slider({
+    Name = "Speed Value",
+    Min = 1,
+    Max = 20,
+    Default = 16,
+    Decimal = 1,
+    Callback = function(value)
+        getgenv().SpeedValue = value
+        print("Speed Value set to:", value)
+    end
+})
+
+-- Loop to apply speed
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
         end
-    })
-end
+    end
+end)
 
 -- Instant Interact Toggle
-SelfSection:Toggle({
+local InstantInteractToggle = Section:Toggle({
     Name = "Instant Interact",
     Flag = "InstantInteract",
     Default = false,
-    Callback = function(Value)
-        getgenv().InstantInteract = Value
-        print("Instant Interact:", Value)
+    Callback = function(value)
+        getgenv().InstantInteract = value
+        print("Instant Interact:", value)
     end
 })
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if getgenv().InstantInteract then
+            for _, prompt in pairs(workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    prompt.HoldDuration = 0
+                end
+            end
+        end
+    end
+end)
 
 -- Click Delete Toggle
 SelfSection:Toggle({
