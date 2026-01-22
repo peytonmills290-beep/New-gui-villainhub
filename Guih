@@ -7538,7 +7538,6 @@ task.spawn(function()
         end
     end
 end)
-
 -- Instant Interact Toggle
 local InstantInteractToggle = Section:Toggle({
     Name = "Instant Interact",
