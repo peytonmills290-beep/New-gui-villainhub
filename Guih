@@ -7484,207 +7484,26 @@ local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 -- =========================
 -- SELF FLAGS
 -- =========================
-getgenv().InfiniteStamina = false
-getgenv().SpeedEnabled = false
-getgenv().WalkSpeed = 16
-getgenv().InstantInteract = false
-getgenv().ClickDelete = false
-
 -- =========================
--- SELF SECTION
+-- CHARACTER / SERVICES
 -- =========================
-for Index = 1, 2 do
-    local Section = SelfPage:Section({
-        Name = "LOCAL PLAYER MODS "..Index,
-        Description = "Internal modifications for self",
-        Icon = "123944728972740",
-        Side = Index
-    })
-
-    -- Infinite Stamina
-    Section:Toggle({
-        Name = "Infinite Stamina",
-        Flag = "InfiniteStamina",
-        Default = false,
-        Callback = function(Value)
-            getgenv().InfiniteStamina = Value
-        end
-    })
-
-    -- Speed Toggle
-    local SpeedToggle = Section:Toggle({
-        Name = "Speed",
-        Flag = "Speed",
-        Default = false,
-        Callback = function(Value)
-            getgenv().SpeedEnabled = Value
-        end
-    })
-
-    -- Speed Slider (MAX 20)
-    SpeedToggle:Settings(250):Slider({
-        Name = "WalkSpeed",
-        Flag = "WalkSpeed",
-        Min = 1,
-        Max = 20,
-        Default = 16,
-        Callback = function(Value)
-            getgenv().WalkSpeed = Value
-        end
-    })
-
-    -- Instant Interact
-    Section:Toggle({
-        Name = "Instant Interact",
-        Flag = "InstantInteract",
-        Default = false,
-        Callback = function(Value)
-            getgenv().InstantInteract = Value
-        end
-    })
-
-    -- Click Delete (Tap or Click)
-    Section:Toggle({
-        Name = "Click Delete",
-        Flag = "ClickDelete",
-        Default = false,
-        Callback = function(Value)
-            getgenv().ClickDelete = Value
-        end
-    })
-end
-
--- =========================
--- LOGIC LOOPS
--- =========================
-task.spawn(function()
-    while task.wait(0.2) do
-        local char = Players.LocalPlayer.Character
-        if not char then continue end
-
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if not hum then continue end
-
-        -- Infinite Stamina
-        if getgenv().InfiniteStamina then
-            if hum:FindFirstChild("Stamina") then
-                hum.Stamina.Value = hum.Stamina.MaxValue
-            end
-        end
-
-        -- Speed
-        if getgenv().SpeedEnabled then
-            hum.WalkSpeed = getgenv().WalkSpeed
-        end
-    end
-end)
-
--- Instant Interact
-task.spawn(function()
-    while task.wait(0.3) do
-        if getgenv().InstantInteract then
-            for _,v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("ProximityPrompt") then
-                    v.HoldDuration = 0
-                    v.RequiresLineOfSight = false
-                end
-            end
-        end
-    end
-end)
-
--- Click Delete (PC + Mobile)
-local UIS = game:GetService("UserInputService")
-UIS.InputBegan:Connect(function(input, gp)
-    if gp or not getgenv().ClickDelete then return end
-
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        local target = Players.LocalPlayer:GetMouse().Target
-        if target then
-            target:Destroy()
-        end
-    end
-end)
-
-
-
-
--- =========================
--- COMBAT PAGE
--- =========================
-local CombatSection = CombatPage:Section({
-    Name = "Gun mods",
-    Description = "Gun mods",
-    Icon = "140016863627496"
-})
-
-getgenv().InfAmmo = false
-CombatSection:Toggle({
-    Name = "Infinite Ammo⚠️",
-    Default = false,
-    Callback = function(Value)
-        getgenv().InfAmmo = Value
-        print("Infinite Ammo:", Value)
-    end
-})
-
--- Example infinite ammo loop
-task.spawn(function()
-    while task.wait(0.1) do
-        if getgenv().InfAmmo then
-            if char and humanoid then
-                for _, tool in ipairs(player.Backpack:GetChildren()) do
-                    if tool:IsA("Tool") and tool:FindFirstChild("Mag") then
-                        tool.Mag.Value = 10
-                    end
-                end
-            end
-        end
-    end
-end)
-
-
--- =========================
--- PLAYER TELEPORT (MAX 20) | PlayersPage
--- =========================
-
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
--- Section inside PlayersPage
-local PlayerTeleportSection = PlayersPage:Section({
-    Name = "Teleport to Player",
-    Description = "Select a player and teleport (max 20 players shown)"
-})
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local humanoid = char:WaitForChild("Humanoid")
 
--- Variables
-local SelectedPlayer = nil
-local PlayerNames = {}
-
--- Function to refresh the list
-local function RefreshPlayerList()
-    table.clear(PlayerNames)
-
-    local count = 0
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(PlayerNames, plr.Name)
-            count += 1
-        end
-        if count >= 20 then break end -- max 20 players
-    end
-
-    table.sort(PlayerNames)
-    PlayerListbox:RefreshOptions(PlayerNames) -- update the Listbox
-end
-
--- Connect refresh to join/leave
-Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(RefreshPlayerList)
+player.CharacterAdded:Connect(function(c)
+    char = c
+    hrp = char:WaitForChild("HumanoidRootPart")
+    humanoid = char:WaitForChild("Humanoid")
+end)
 
 -- =========================
--- TELEPORT METHOD
+-- TELEPORT MODULE
 -- =========================
 local MrDarkyModule = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
@@ -7692,61 +7511,12 @@ local MrDarkyModule = loadstring(game:HttpGet(
 
 local function smartTeleport(cf)
     MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay for server
+    task.wait(0.2)
 end
 
 -- =========================
--- Player Listbox
+-- SOUTH BRONX LOCATIONS
 -- =========================
-local PlayerListbox = PlayerTeleportSection:Listbox({
-    Flag = "PlayerTeleportList",
-    Size = 260,
-    Items = PlayerNames,
-    Multi = false,
-    Callback = function(Value)
-        SelectedPlayer = Value
-        print("Selected:", Value)
-    end
-})
-
--- =========================
--- Teleport Button
--- =========================
-PlayerTeleportSection:Button({
-    Name = "Teleport to Selected Player",
-    Callback = function()
-        if not SelectedPlayer then
-            warn("No player selected")
-            return
-        end
-
-        local target = Players:FindFirstChild(SelectedPlayer)
-        if target
-            and target.Character
-            and target.Character:FindFirstChild("HumanoidRootPart") then
-
-            smartTeleport(target.Character.HumanoidRootPart.CFrame)
-            print("Teleported to:", SelectedPlayer)
-        else
-            warn("Target not valid")
-        end
-    end
-})
-
--- Initial refresh
-RefreshPlayerList()
-
--- =========================
--- TELEPORT METHOD (ADD THIS)
--- =========================
--- Teleport Section
--- =========================
-local TeleportSection = WorldPage:Section({
-    Name = "Teleport",
-    Description = "Teleport to South Bronx locations",
-})
-
--- All South Bronx locations with emojis
 local TeleportLocations = {
     ["Main Gun Store 🔫"] = CFrame.new(219, 6, -158),
     ["Black Market 💹"] = CFrame.new(671, 6, 251),
@@ -7762,158 +7532,308 @@ local TeleportLocations = {
     ["Studio 🎙"] = CFrame.new(522, 6, -26),
     ["Shoe Store 👟"] = CFrame.new(525, 7, -184),
     ["Second Gun Store 🔫"] = CFrame.new(-459, 6, 328),
-    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173),
+    ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
 
--- Create Listbox with locations
-local LocationList = TeleportSection:Listbox({
-    Flag = "TeleportLocations",
-    Default = "Select Location",
-    Size = 275,
-    Items = {}, -- initially empty, will fill below
-    Multi = false,
-    Callback = function(selected)
-        local cf = TeleportLocations[selected]
-        if cf and char then
-            smartTeleport(cf)
-            print("Teleported to:", selected)
-        end
-    end
-})
+-- =========================
+-- SELF SECTION
+-- =========================
+do
+    for Index = 1, 2 do
+        local Section = SelfPage:Section({
+            Name = "LOCAL PLAYER MODS "..Index,
+            Description = "Internal modifications for self",
+            Icon = "123944728972740",
+            Side = Index
+        })
 
--- Fill the Listbox dynamically
-for name,_ in pairs(TeleportLocations) do
-    LocationList:Add(name)
+        -- Infinite Stamina
+        Section:Toggle({
+            Name = "Infinite Stamina",
+            Flag = "stamina",
+            Default = false,
+            Callback = function(Value)
+                getgenv().InfiniteStamina = Value
+                print("Infinite Stamina: "..tostring(Value))
+            end
+        })
+
+        -- Speed Control
+        local Toggle = Section:Toggle({
+            Name = "Speed",
+            Flag = "Speed",
+            Default = false,
+            Callback = function(Value) print("Speed toggle:", Value) end
+        })
+        local ToggleSettings = Toggle:Settings(300)
+        for i = 1, 15 do
+            ToggleSettings:Slider({
+                Name = "Speed",
+                Flag = "Speed"..i,
+                Min = 1,
+                Max = 20, -- maximum 20
+                Default = 0,
+                Suffix = "km/h",
+                Decimals = 1,
+                Callback = function(Value)
+                    print("Speed Value "..i..":", Value)
+                end
+            })
+        end
+
+        -- Instant Interact
+        Section:Toggle({
+            Name = "Instant Interact",
+            Flag = "InstantInteract",
+            Default = false,
+            Callback = function(Value)
+                getgenv().InstantInteract = Value
+            end
+        })
+        task.spawn(function()
+            while task.wait(0.1) do
+                if getgenv().InstantInteract then
+                    for _,v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("ProximityPrompt") then
+                            v.HoldDuration = 0
+                        end
+                    end
+                end
+            end
+        end)
+    end
 end
 
 -- =========================
--- MONEY PAGE (Auto Farm)
+-- COMBAT SECTION
 -- =========================
-local MoneySection = MoneyPage:Section({
-    Name = "Auto Farm",
-    Description = "Farm money",
-    Icon = "85500115785722"
-})
+do
+    local Section = CombatPage:Section({Name = "Combat", Description = "Combat Mods"})
 
--- -------------------------
--- Box Farm
--- -------------------------
-local BoxFarmToggle = MoneySection:Toggle({
-    Name = "Box Farm",
-    Default = false,
-    Callback = function(v)
-        getgenv().BoxFarm = v
-        print("Box Farm:", v)
-
-        -- Box Farm code runs only when toggle is ON
-        task.spawn(function()
-            while getgenv().BoxFarm do
-                local boxStart = CFrame.new(-552.0956,3.53,-84.45)
-                local boxTarget = CFrame.new(-401.14,3.36,-70.97)
-                local boxProx1 = workspace.PlaceHere.Attachment.ProximityPrompt
-                local boxProx2 = workspace.cratetruck2.Model.ClickBox.Attachment.ProximityPrompt
-                boxProx1.HoldDuration = 0
-                boxProx2.HoldDuration = 0
-
-                local function equipCrate()
-                    local bp = player.Backpack
-                    if bp:FindFirstChild("Crate") then
-                        bp.Crate.Parent = char
-                        task.wait(0.1)
-                        return true
+    -- Infinite Ammo
+    Section:Toggle({
+        Name = "Infinite Ammo",
+        Flag = "InfAmmo",
+        Default = false,
+        Callback = function(v)
+            getgenv().InfAmmo = v
+        end
+    })
+    task.spawn(function()
+        while task.wait(0.1) do
+            if getgenv().InfAmmo then
+                local char = player.Character
+                if not char then continue end
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if not humanoid then continue end
+                for _, tool in ipairs(player.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and tool:FindFirstChild("Setting") and tool:FindFirstChild("Mag") then
+                        if tool.Mag.Value <= 0 then
+                            humanoid:UnequipTools()
+                            tool.Mag.Value = 10
+                        end
                     end
-                    return false
                 end
+            end
+        end
+    end)
+end
 
+-- =========================
+-- WORLD / TELEPORT SECTION
+-- =========================
+do
+    local Section = WorldPage:Section({Name = "Teleport", Description = "Teleport to South Bronx locations"})
+
+    local b = Section:Listbox({
+        Flag = "Listbox",
+        Default = "None",
+        Size = 275,
+        Items = {"None"},
+        Multi = false,
+        Callback = function(Value)
+            if Value ~= "None" then
+                local cf = TeleportLocations[Value]
+                if cf and char then
+                    smartTeleport(cf)
+                    print("Teleported to:", Value)
+                end
+            end
+        end
+    })
+
+    for name,_ in pairs(TeleportLocations) do
+        b:Add(name)
+    end
+end
+
+-- =========================
+-- PLAYERS PAGE (TELEPORT TO PLAYER)
+-- =========================
+do
+    local Section = PlayersPage:Section({Name = "Players", Description = "Teleport to a selected player"})
+    local ConfigSelected
+
+    local PlayerList = Section:Listbox({
+        Flag = "PlayerList",
+        Default = "None",
+        Size = 275,
+        Items = {"None"},
+        Multi = false,
+        Callback = function(Value)
+            if Value ~= "None" then
+                ConfigSelected = Value
+                print("Selected player:", Value)
+            end
+        end
+    })
+
+    -- Update player list dynamically
+    task.spawn(function()
+        while task.wait(2) do
+            if PlayerList then
+                PlayerList:Clear()
+                for i, p in pairs(Players:GetPlayers()) do
+                    if p ~= player and i <= 20 then
+                        PlayerList:Add(p.Name)
+                    end
+                end
+            end
+        end
+    end)
+
+    -- Teleport button
+    Section:Button({
+        Name = "Teleport to Selected Player",
+        Callback = function()
+            if ConfigSelected then
+                local target = Players:FindFirstChild(ConfigSelected)
+                if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char then
+                    smartTeleport(target.Character.HumanoidRootPart.CFrame)
+                    print("Teleported to player:", ConfigSelected)
+                end
+            end
+        end
+    })
+end
+
+-- =========================
+-- MONEY / AUTO FARM SECTION
+-- =========================
+do
+    local Section = MoneyPage:Section({Name = "Auto Farm", Description = "Automated farming"})
+
+    -- Box Farm
+    Section:Toggle({
+        Name = "Box Autofarm",
+        Flag = "BoxFarm",
+        Default = false,
+        Callback = function(v) getgenv().BoxFarm = v end
+    })
+
+    -- Marsh Farm Beta
+    Section:Toggle({
+        Name = "Marsh Farm Beta",
+        Flag = "MarshFarm",
+        Default = false,
+        Callback = function(v) getgenv().MarshFarm = v end
+    })
+
+    -- Box Farm Logic
+    local boxStart = CFrame.new(-552.0956,3.53,-84.45)
+    local boxTarget = CFrame.new(-401.14,3.36,-70.97)
+    local boxProx1 = workspace.PlaceHere.Attachment.ProximityPrompt
+    local boxProx2 = workspace.cratetruck2.Model.ClickBox.Attachment.ProximityPrompt
+    boxProx1.HoldDuration = 0
+    boxProx2.HoldDuration = 0
+
+    local function equipCrate()
+        local bp = player.Backpack
+        if bp:FindFirstChild("Crate") then
+            bp.Crate.Parent = char
+            task.wait(0.1)
+            return true
+        end
+        return false
+    end
+
+    task.spawn(function()
+        while task.wait(0.1) do
+            if getgenv().BoxFarm then
                 smartTeleport(boxStart)
                 fireproximityprompt(boxProx1,0)
                 smartTeleport(boxTarget)
                 if equipCrate() then fireproximityprompt(boxProx2,0) end
-
-                task.wait(0.1)
             end
-        end)
+        end
+    end)
+
+    -- Marsh Farm Logic
+    local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
+    local BuyHouseCF = CFrame.new(1108.2331,10.7941,451.8186)
+    local CookPotCF = CFrame.new(1142.4928,10.1050,452.5984)
+
+    local StoreRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
+    local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
+    local CookPrompt = workspace.Map.Houses.WH1.Interior["Cooking Pot"].Attachment.ProximityPrompt
+    local SellPrompt = workspace.Folders.NPCs:FindFirstChild("Lamont Bell") and workspace.Folders.NPCs["Lamont Bell"].UpperTorso:FindFirstChildOfClass("ProximityPrompt")
+
+    HousePrompt.HoldDuration = 0
+    CookPrompt.HoldDuration = 0
+    if SellPrompt then SellPrompt.HoldDuration = 0 end
+
+    local function EquipItem(name)
+        local bp = player.Backpack
+        local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
+        if item then item.Parent = char task.wait(0.1) return true end
+        return false
     end
-})
 
--- -------------------------
--- Marsh Farm Beta
--- -------------------------
-local MarshFarmToggle = MoneySection:Toggle({
-    Name = "Marsh Farm Beta",
-    Default = false,
-    Callback = function(v)
-        getgenv().MarshFarm = v
-        print("Marsh Farm Beta:", v)
+    local function EquipMarshBag()
+        local bp = player.Backpack
+        local bag = bp:FindFirstChild("Small Marshmallow Bag")
+            or bp:FindFirstChild("Medium Marshmallow Bag")
+            or bp:FindFirstChild("Large Marshmallow Bag")
+        if bag then bag.Parent = char return true end
+        return false
+    end
 
-        -- Marsh Farm code runs only when toggle is ON
-        task.spawn(function()
-            while getgenv().MarshFarm do
-                -- Locations
-                local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
-                local BuyHouseCF = CFrame.new(1108.2331,10.7941,451.8186)
-                local CookPotCF = CFrame.new(1142.4928,10.1050,452.5984)
-                local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
-                local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
-                local CookPrompt = workspace.Map.Houses.WH1.Interior["Cooking Pot"].Attachment.ProximityPrompt
-                local SellPrompt = workspace.Folders.NPCs:FindFirstChild("Lamont Bell") and workspace.Folders.NPCs["Lamont Bell"].UpperTorso:FindFirstChildOfClass("ProximityPrompt")
-
-                -- Reset hold durations
-                HousePrompt.HoldDuration = 0
-                CookPrompt.HoldDuration = 0
-                if SellPrompt then SellPrompt.HoldDuration = 0 end
-
-                -- Helper functions
-                local function EquipItem(name)
-                    local bp = player.Backpack
-                    local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
-                    if item then item.Parent = char task.wait(0.1) return true end
-                    return false
-                end
-
-                local function EquipMarshBag()
-                    local bp = player.Backpack
-                    local bag = bp:FindFirstChild("Small Marshmallow Bag")
-                        or bp:FindFirstChild("Medium Marshmallow Bag")
-                        or bp:FindFirstChild("Large Marshmallow Bag")
-                    if bag then bag.Parent = char return true end
-                    return false
-                end
-
-                -- 1️⃣ Buy Products
+    task.spawn(function()
+        while task.wait(0.1) do
+            if getgenv().MarshFarm then
+                -- Buy products
                 smartTeleport(BuyProductsCF)
                 for _,item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
                     StoreRemote:FireServer(item)
                     local timer=0
                     while not player.Backpack:FindFirstChild(item) and timer<1 do
                         task.wait(0.1)
-                        timer = timer + 0.1
+                        timer=timer+0.1
                     end
                 end
 
-                -- 2️⃣ Buy House
+                -- Buy house
                 smartTeleport(BuyHouseCF)
                 task.wait(0.2)
                 fireproximityprompt(HousePrompt,0)
 
-                -- 3️⃣ Cooking
+                -- Cooking
                 smartTeleport(CookPotCF)
-                if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(22) end
-                if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0.4) end
-                if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0.4) task.wait(61) end
+                if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(20) end
+                if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0) end
+                if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0) task.wait(61) end
                 if EquipItem("Empty Bag") then fireproximityprompt(CookPrompt,0) end
 
-                -- 4️⃣ Sell Marshmallow
+                -- Sell marshmallow
                 smartTeleport(BuyProductsCF)
                 if EquipMarshBag() and SellPrompt then fireproximityprompt(SellPrompt,0) end
-
-                task.wait(0.1)
             end
-        end)
-    end
-})
+        end
+    end)
+end
+
 -- =========================
--- INIT WINDOW
+-- INIT
 -- =========================
 Window:Init()
 getgenv().Library = Library
