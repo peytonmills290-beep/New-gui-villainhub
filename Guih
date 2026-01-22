@@ -7507,7 +7507,11 @@ SelfSection:Toggle({
 })
 
 -- Speed Toggle with Slider Settings
-local Toggle = SelfSection:Toggle({
+-- Make sure you already have a Section variable, e.g., SelfSection or SettingsSection
+-- Example: local Section = SelfSection
+
+-- Speed toggle
+local SpeedToggle = Section:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
@@ -7520,26 +7524,35 @@ local Toggle = SelfSection:Toggle({
     end
 })
 
-local ToggleSettings = Toggle:Settings(300)
+-- Slider inside the toggle settings
+local SpeedSliderSettings = SpeedToggle:Settings(200) -- container size
 
-for i = 1, 15 do
-    ToggleSettings:Slider({
-        Name = "Speed",
-        Flag = "Speed"..i,
-        Min = 1,
-        Max = 20,
-        Default = 16,
-        Decimals = 1,
-        Suffix = "studs/s",
-        Callback = function(Value)
-            getgenv().SpeedValue = Value
-            if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
-                char:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
-            end
-            print("Speed set to:", Value)
+SpeedSliderSettings:Slider({
+    Name = "Speed Value",
+    Flag = "SpeedValue",
+    Min = 1,
+    Max = 20,
+    Default = 16,
+    Decimals = 1,
+    Suffix = "studs/s",
+    Callback = function(Value)
+        getgenv().SpeedValue = Value
+        if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
         end
-    })
-end
+        print("Speed set to:", Value)
+    end
+})
+
+-- Loop to apply speed continuously
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
+        end
+    end
+end)
 
 -- Instant Interact Toggle
 local InstantInteractToggle = Section:Toggle({
