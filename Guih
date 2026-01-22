@@ -7507,7 +7507,7 @@ SelfSection:Toggle({
 })
 
 -- Speed Toggle with Slider Settings
-local Toggle = Section:Toggle({
+local Toggle = SelfSection:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
@@ -7520,14 +7520,14 @@ local Toggle = Section:Toggle({
     end
 })
 
-local ToggleSettings = Toggle:Settings(300) -- size of the slider container
+local ToggleSettings = Toggle:Settings(300)
 
 for i = 1, 15 do
     ToggleSettings:Slider({
         Name = "Speed",
         Flag = "Speed"..i,
         Min = 1,
-        Max = 20, -- maximum speed
+        Max = 20,
         Default = 16,
         Decimals = 1,
         Suffix = "studs/s",
@@ -7540,16 +7540,6 @@ for i = 1, 15 do
         end
     })
 end
-
--- Loop to continuously apply speed while toggle is on
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if getgenv().SpeedEnabled and char and char:FindFirstChildOfClass("Humanoid") then
-            char:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
-        end
-    end
-end)
 
 -- Instant Interact Toggle
 local InstantInteractToggle = Section:Toggle({
