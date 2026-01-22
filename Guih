@@ -7468,8 +7468,8 @@ end)
 -- Setup GUI Pages
 -- =========================
 Window:Category("Misc & Miscellaneous")
-local SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
 local MoneyPage = Window:Page({Name = "Money", Icon = "85500115785722", Columns = 1})
+local SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
 local WorldPage = Window:Page({Name = "World", Icon = "123944728972740"})
 
 Window:Category("Combat & Visuals")
@@ -7492,7 +7492,21 @@ local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 -- ==============================
 -- SELF SECTION: Speed + Instant Interact + Infinite Stamina
 -- ==============================
--- 2️⃣ Create a section inside SelfPage
+-- 1️⃣ Get existing SelfPage if it exists
+local SelfPage = nil
+for _, page in pairs(Window.Pages) do
+    if page.Name == "Self" then
+        SelfPage = page
+        break
+    end
+end
+
+-- If it doesn't exist, create it
+if not SelfPage then
+    SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
+end
+
+-- 2️⃣ Create the section (keep this!)
 local SelfSection = SelfPage:Section({
     Name = "Player Mods",
     Description = "Mods for your character",
@@ -7500,18 +7514,15 @@ local SelfSection = SelfPage:Section({
     Side = 1
 })
 
--- 3️⃣ SPEED TOGGLE + SLIDER
 local SpeedToggle = SelfSection:Toggle({
     Name = "Speed",
     Flag = "Speed",
     Default = false,
     Callback = function(Value)
         getgenv().SpeedEnabled = Value
-        if not Value then
-            local playerChar = game.Players.LocalPlayer.Character
-            if playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
-                playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- reset default
-            end
+        local playerChar = game.Players.LocalPlayer.Character
+        if not Value and playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
+            playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- reset default
         end
         print("Speed Enabled:", Value)
     end
@@ -7536,7 +7547,7 @@ SpeedSliderSettings:Slider({
     end
 })
 
--- Loop to continuously apply speed safely
+-- Loop to continuously apply speed only if toggle is on
 task.spawn(function()
     while true do
         task.wait(0.1)
