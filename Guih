@@ -7811,72 +7811,98 @@ task.spawn(function()
     end
 end)
 
--- MARSH FARM BETA
+-- MARSH FARM BETA FIXED (SellPrompt removed)
 getgenv().MarshFarm = false
+
 AutoFarmSection:Toggle({
     Name = "Marsh Farm Beta",
     Default = false,
     Callback = function(v) getgenv().MarshFarm = v end
 })
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+local function getChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+-- Locations
 local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
 local BuyHouseCF = CFrame.new(1108.2331,10.7941,451.8186)
 local CookPotCF = CFrame.new(1142.4928,10.1050,452.5984)
 
+-- Prompts & remotes
 local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
 local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
 local CookPrompt = workspace.Map.Houses.WH1.Interior["Cooking Pot"].Attachment.ProximityPrompt
-local SellPrompt = workspace.Folders.NPCs:FindFirstChild("Lamont Bell") and workspace.Folders.NPCs["Lamont Bell"].UpperTorso:FindFirstChildOfClass("ProximityPrompt")
 
 HousePrompt.HoldDuration = 0
 CookPrompt.HoldDuration = 0
-if SellPrompt then SellPrompt.HoldDuration = 0 end
 
+-- Equip functions
 local function EquipItem(name)
+    local char = getChar()
     local bp = player.Backpack
     local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
-    if item then item.Parent = char task.wait(0.1) return true end
+    if item then
+        item.Parent = char
+        task.wait(0.1)
+        return true
+    end
     return false
 end
 
 local function EquipMarshBag()
+    local char = getChar()
     local bp = player.Backpack
     local bag = bp:FindFirstChild("Small Marshmallow Bag")
         or bp:FindFirstChild("Medium Marshmallow Bag")
         or bp:FindFirstChild("Large Marshmallow Bag")
-    if bag then bag.Parent = char return true end
+    if bag then
+        bag.Parent = char
+        return true
+    end
     return false
 end
 
+-- MAIN LOOP
 task.spawn(function()
     while true do
+        local char = getChar()
         if getgenv().MarshFarm then
             -- Buy products
-            char:SetPrimaryPartCFrame(BuyProductsCF)
-            for _,item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
+            if char:FindFirstChild("HumanoidRootPart") then
+                char:SetPrimaryPartCFrame(BuyProductsCF)
+            end
+            for _, item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
                 StoreRemote:FireServer(item)
-                local timer=0
-                while not player.Backpack:FindFirstChild(item) and timer<1 do
+                local timer = 0
+                while not player.Backpack:FindFirstChild(item) and timer < 1 do
                     task.wait(0.1)
-                    timer=timer+0.1
+                    timer = timer + 0.1
                 end
             end
 
             -- Buy house
-            char:SetPrimaryPartCFrame(BuyHouseCF)
-            task.wait(0.2)
-            fireproximityprompt(HousePrompt,0)
+            if char:FindFirstChild("HumanoidRootPart") then
+                char:SetPrimaryPartCFrame(BuyHouseCF)
+                task.wait(0.2)
+                fireproximityprompt(HousePrompt,0)
+            end
 
             -- Cooking
-            char:SetPrimaryPartCFrame(CookPotCF)
+            if char:FindFirstChild("HumanoidRootPart") then
+                char:SetPrimaryPartCFrame(CookPotCF)
+            end
             if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(20) end
             if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0) end
             if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0) task.wait(61) end
             if EquipItem("Empty Bag") then fireproximityprompt(CookPrompt,0) end
 
-            -- Sell marshmallow
-            char:SetPrimaryPartCFrame(BuyProductsCF)
-            if EquipMarshBag() and SellPrompt then fireproximityprompt(SellPrompt,0) end
+            -- Equip Marsh Bag only (no sell prompt)
+            EquipMarshBag()
         end
         task.wait(0.1)
     end
