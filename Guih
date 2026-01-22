@@ -7700,17 +7700,13 @@ CombatSection:Button({
 -- TELEPORT LOCATIONS
 -- =========================
 -- Load Orion teleport module
+-- Orion teleport method
 local MrDarkyModule = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
 ))()
 
 local function smartTeleport(cf)
-    if not cf then
-        warn("Teleport failed: CFrame is nil")
-        return
-    end
-
-    print("Teleporting to:", cf.Position)
+    if not cf then return end
     MrDarkyModule.ExemptTeleport(cf.Position)
     task.wait(0.2)
 end
@@ -7734,53 +7730,38 @@ local TeleportLocations = {
     ["Exclusive Gun Store 🔫"] = CFrame.new(1131, 4, 173)
 }
 
--- World page section
+-- Teleport section
 local TeleportSection = WorldPage:Section({
     Name = "Teleport",
     Description = "Teleport to South Bronx locations",
-    Icon = "123944728972740" -- replace with your icon if needed
+    Icon = "123944728972740"
 })
 
--- Listbox for selecting location
+-- Location selector
+local SelectedLocation = nil
+
 local LocationList = TeleportSection:Listbox({
-    Flag = "SelectedLocation",
-    Default = "",
+    Name = "Locations",
     Size = 275,
-    Items = {}, -- will fill dynamically
+    Items = {},
     Multi = false,
     Callback = function(value)
-        print("Selected location:", value)
+        SelectedLocation = value
     end
 })
 
--- Button to teleport
+-- Teleport button
 TeleportSection:Button({
-Name = "Teleport to Selected Location",
+    Name = "Teleport to Selected Location",
     Callback = function()
-        if not SelectedLocation then
-            warn("No location selected")
-            return
-        end
-
-        local cf = TeleportLocations[SelectedLocation]
-        if not cf then
-            warn("Invalid location:", SelectedLocation)
-            return
-        end
-
-        smartTeleport(cf)
-    end
-})
-
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            smartTeleport(TeleportLocations[selectedLocation])
-            print("Teleported to:", selectedLocation)
+        if SelectedLocation and TeleportLocations[SelectedLocation] then
+            smartTeleport(TeleportLocations[SelectedLocation])
         end
     end
 })
 
--- Fill the listbox with all locations
-for name,_ in pairs(TeleportLocations) do
+-- Fill listbox
+for name in pairs(TeleportLocations) do
     LocationList:Add(name)
 end
 
