@@ -1,7 +1,7 @@
--- Made by samet
+-- Made by Villainwrld
 -- Join for high quality UI Commissions
--- https://discord.gg/VhvTd5HV8d
--- @joestar._3
+-- 0
+-- @me
 
 local Library do 
     local Workspace = game:GetService("Workspace")
