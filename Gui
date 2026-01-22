@@ -7447,19 +7447,41 @@ local Window = Library:Window({
     SubName = "VILLAINHUB",
     Logo = "120959262762131"
 })
+local KeybindList = Library:KeybindList("Keybinds")
 
-local KeybindList = Library:KeybindList("key binds VILLAINHUB")
+-- =========================
+-- VillainHub Paste & Play Template
+-- =========================
+repeat task.wait() until game:IsLoaded()
 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+player.CharacterAdded:Connect(function(c)
+    char = c
+    humanoid = char:WaitForChild("Humanoid")
+end)
+
+-- =========================
+-- Setup GUI Pages
+-- =========================
 Window:Category("Misc & Miscellaneous")
-local SelfPage = Window:Page({Name = "Self", Icon = "138827881557940"})
-local MoneyPage = Window:Page({Name = "Money", Icon = "70787382123037", Columns = 1})
+local SelfPage = Window:Page({Name = "Self", Icon = "104184057534339"})
+local MoneyPage = Window:Page({Name = "Money", Icon = "85500115785722", Columns = 1})
 local WorldPage = Window:Page({Name = "World", Icon = "123944728972740"})
+
 Window:Category("Combat & Visuals")
-local PlayersPage = Window:Page({Name = "Page", Icon = "134236649319095"})
-local CombatPage = Window:Page({Name = "Combat", Icon = "82617949259869"})
+local PlayersPage = Window:Page({Name = "Players", Icon = "134236649319095"})
+local CombatPage = Window:Page({Name = "Combat", Icon = "140016863627496"})
+
 Window:Category("Utilities & Settings")
 local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 
+-- =========================
+-- SELF PAGE
+-- =========================
 for Index = 1, 2 do 
     local Section = SelfPage:Section({
         Name = "LOCAL PLAYER MODS "..Index,
@@ -7468,6 +7490,7 @@ for Index = 1, 2 do
         Side = Index
     })
 
+    -- Infinite Stamina Toggle
     local Toggle = Section:Toggle({
         Name = "Infinite Stamina",
         Flag = "stamina",
@@ -7479,6 +7502,198 @@ for Index = 1, 2 do
     })
 end
 
+-- =========================
+-- COMBAT PAGE
+-- =========================
+local CombatSection = CombatPage:Section({
+    Name = "Gun mods",
+    Description = "Gun mods",
+    Icon = "140016863627496"
+})
+
+getgenv().InfAmmo = false
+CombatSection:Toggle({
+    Name = "Infinite Ammo⚠️",
+    Default = false,
+    Callback = function(Value)
+        getgenv().InfAmmo = Value
+        print("Infinite Ammo:", Value)
+    end
+})
+
+-- Example infinite ammo loop
+task.spawn(function()
+    while task.wait(0.1) do
+        if getgenv().InfAmmo then
+            if char and humanoid then
+                for _, tool in ipairs(player.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and tool:FindFirstChild("Mag") then
+                        tool.Mag.Value = 10
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- =========================
+-- WORLD PAGE (Teleport)
+-- =========================
+local TeleportSection = WorldPage:Section({
+    Name = "Teleport",
+    Description = "Teleport to locations",
+    Icon = "123944728972740"
+})
+
+local TeleportLocations = {
+    ["Bank"] = CFrame.new(0, 5, 0),
+    ["Gun Store"] = CFrame.new(10, 5, 0)
+}
+
+TeleportSection:Dropdown({
+    Name = "Teleport",
+    Default = "None",
+    Options = (function()
+    Callback = function(Value)
+        if Value ~= "None" then
+            local cf = TeleportLocations[Value]
+            if cf and char then
+                char:SetPrimaryPartCFrame(cf)
+                print("Teleported to:", Value)
+            end
+        end
+    end
+})
+
+-- =========================
+-- MONEY PAGE (Auto Farm)
+-- =========================
+local MoneySection = MoneyPage:Section({
+    Name = "Auto Farm",
+    Description = "Farm money",
+    Icon = "85500115785722"
+})
+
+-- -------------------------
+-- Box Farm
+-- -------------------------
+local BoxFarmToggle = MoneySection:Toggle({
+    Name = "Box Farm",
+    Default = false,
+    Callback = function(v)
+        getgenv().BoxFarm = v
+        print("Box Farm:", v)
+
+        -- Box Farm code runs only when toggle is ON
+        task.spawn(function()
+            while getgenv().BoxFarm do
+                local boxStart = CFrame.new(-552.0956,3.53,-84.45)
+                local boxTarget = CFrame.new(-401.14,3.36,-70.97)
+                local boxProx1 = workspace.PlaceHere.Attachment.ProximityPrompt
+                local boxProx2 = workspace.cratetruck2.Model.ClickBox.Attachment.ProximityPrompt
+                boxProx1.HoldDuration = 0
+                boxProx2.HoldDuration = 0
+
+                local function equipCrate()
+                    local bp = player.Backpack
+                    if bp:FindFirstChild("Crate") then
+                        bp.Crate.Parent = char
+                        task.wait(0.1)
+                        return true
+                    end
+                    return false
+                end
+
+                smartTeleport(boxStart)
+                fireproximityprompt(boxProx1,0)
+                smartTeleport(boxTarget)
+                if equipCrate() then fireproximityprompt(boxProx2,0) end
+
+                task.wait(0.1)
+            end
+        end)
+    end
+})
+
+-- -------------------------
+-- Marsh Farm Beta
+-- -------------------------
+local MarshFarmToggle = MoneySection:Toggle({
+    Name = "Marsh Farm Beta",
+    Default = false,
+    Callback = function(v)
+        getgenv().MarshFarm = v
+        print("Marsh Farm Beta:", v)
+
+        -- Marsh Farm code runs only when toggle is ON
+        task.spawn(function()
+            while getgenv().MarshFarm do
+                -- Locations
+                local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
+                local BuyHouseCF = CFrame.new(1108.2331,10.7941,451.8186)
+                local CookPotCF = CFrame.new(1142.4928,10.1050,452.5984)
+                local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
+                local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
+                local CookPrompt = workspace.Map.Houses.WH1.Interior["Cooking Pot"].Attachment.ProximityPrompt
+                local SellPrompt = workspace.Folders.NPCs:FindFirstChild("Lamont Bell") and workspace.Folders.NPCs["Lamont Bell"].UpperTorso:FindFirstChildOfClass("ProximityPrompt")
+
+                -- Reset hold durations
+                HousePrompt.HoldDuration = 0
+                CookPrompt.HoldDuration = 0
+                if SellPrompt then SellPrompt.HoldDuration = 0 end
+
+                -- Helper functions
+                local function EquipItem(name)
+                    local bp = player.Backpack
+                    local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
+                    if item then item.Parent = char task.wait(0.1) return true end
+                    return false
+                end
+
+                local function EquipMarshBag()
+                    local bp = player.Backpack
+                    local bag = bp:FindFirstChild("Small Marshmallow Bag")
+                        or bp:FindFirstChild("Medium Marshmallow Bag")
+                        or bp:FindFirstChild("Large Marshmallow Bag")
+                    if bag then bag.Parent = char return true end
+                    return false
+                end
+
+                -- 1️⃣ Buy Products
+                smartTeleport(BuyProductsCF)
+                for _,item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
+                    StoreRemote:FireServer(item)
+                    local timer=0
+                    while not player.Backpack:FindFirstChild(item) and timer<1 do
+                        task.wait(0.1)
+                        timer = timer + 0.1
+                    end
+                end
+
+                -- 2️⃣ Buy House
+                smartTeleport(BuyHouseCF)
+                task.wait(0.2)
+                fireproximityprompt(HousePrompt,0)
+
+                -- 3️⃣ Cooking
+                smartTeleport(CookPotCF)
+                if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(22) end
+                if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0.4) end
+                if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0.4) task.wait(61) end
+                if EquipItem("Empty Bag") then fireproximityprompt(CookPrompt,0) end
+
+                -- 4️⃣ Sell Marshmallow
+                smartTeleport(BuyProductsCF)
+                if EquipMarshBag() and SellPrompt then fireproximityprompt(SellPrompt,0) end
+
+                task.wait(0.1)
+            end
+        end)
+    end
+})
+-- =========================
+-- INIT WINDOW
+-- =========================
 Window:Init()
 getgenv().Library = Library
 return Library
