@@ -7486,14 +7486,6 @@ local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 -- =========================
 -- =========================
 -- =========================
--- TELEPORT METHOD
--- =========================
-local function smartTeleport(cf)
-    -- Your teleport method
-    MrDarkyModule.ExemptTeleport(cf.Position)
-    task.wait(0.2) -- small delay so server settles
-end
-
 -- =========================
 -- SELF SECTION
 -- =========================
@@ -7640,6 +7632,9 @@ CombatSection:Button({
 -- =========================
 -- TELEPORT LOCATIONS
 -- =========================
+-- =========================
+-- TELEPORT LOCATIONS
+-- =========================
 local TeleportSection = WorldPage:Section({
     Name = "Teleport",
     Description = "Select a South Bronx location and teleport"
@@ -7666,6 +7661,16 @@ local TeleportLocations = {
 
 local SelectedLocation
 
+-- Load the teleport module (same as in your Orion script)
+local MrDarkyModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"))()
+
+-- Teleport function you can use anywhere
+local function smartTeleport(cf)
+    -- Exempt teleport using the module
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2) -- small delay so server settles after teleport
+end
+
 -- Listbox to select location
 local LocationList = TeleportSection:Listbox({
     Flag = "TeleportList",
@@ -7689,14 +7694,7 @@ TeleportSection:Button({
     Name = "Teleport to selected location",
     Callback = function()
         if SelectedLocation and TeleportLocations[SelectedLocation] and char then
-            -- Teleport method
-            local cf = TeleportLocations[SelectedLocation]
-            -- If you use your MrDarkyModule.ExemptTeleport method:
-            if MrDarkyModule and MrDarkyModule.ExemptTeleport then
-                MrDarkyModule.ExemptTeleport(cf.Position)
-            else
-                char:SetPrimaryPartCFrame(cf)
-            end
+            smartTeleport(TeleportLocations[SelectedLocation])
             print("Teleported to:", SelectedLocation)
         else
             warn("No location selected or character missing")
