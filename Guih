@@ -7514,48 +7514,61 @@ local SelfSection = SelfPage:Section({
     Side = 1
 })
 
+-- SERVICES
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- CHARACTER HANDLING
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+player.CharacterAdded:Connect(function(c)
+    char = c
+    humanoid = c:WaitForChild("Humanoid")
+end)
+
+-- SPEED STATE
+local SpeedEnabled = false
+local SpeedValue = 16
+local DefaultSpeed = humanoid.WalkSpeed
+
+-- SPEED TOGGLE
 local SpeedToggle = SelfSection:Toggle({
     Name = "Speed",
-    Flag = "Speed",
-    Default = false,
-    Callback = function(Value)
-        getgenv().SpeedEnabled = Value
-        local playerChar = game.Players.LocalPlayer.Character
-        if not Value and playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
-            playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- reset default
+    Default = false, -- IMPORTANT: never auto-on
+    Callback = function(state)
+        SpeedEnabled = state
+
+        if SpeedEnabled then
+            humanoid.WalkSpeed = SpeedValue
+        else
+            humanoid.WalkSpeed = DefaultSpeed
         end
-        print("Speed Enabled:", Value)
     end
 })
 
-local SpeedSliderSettings = SpeedToggle:Settings(200)
-SpeedSliderSettings:Slider({
-    Name = "Speed Value",
-    Flag = "SpeedValue",
+-- SPEED SLIDER (INSIDE TOGGLE SETTINGS)
+local SpeedSettings = SpeedToggle:Settings(300)
+
+SpeedSettings:Slider({
+    Name = "Speed",
     Min = 1,
     Max = 20,
     Default = 16,
     Decimals = 1,
-    Suffix = "studs/s",
-    Callback = function(Value)
-        getgenv().SpeedValue = Value
-        local playerChar = game.Players.LocalPlayer.Character
-        if getgenv().SpeedEnabled and playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
-            playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = Value
+    Callback = function(value)
+        SpeedValue = value
+        if SpeedEnabled then
+            humanoid.WalkSpeed = value
         end
-        print("Speed set to:", Value)
     end
 })
 
--- Loop to continuously apply speed only if toggle is on
+-- KEEP SPEED APPLIED (ANTI RESET)
 task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if getgenv().SpeedEnabled then
-            local playerChar = game.Players.LocalPlayer.Character
-            if playerChar and playerChar:FindFirstChildOfClass("Humanoid") then
-                playerChar:FindFirstChildOfClass("Humanoid").WalkSpeed = getgenv().SpeedValue or 16
-            end
+    while task.wait(0.2) do
+        if SpeedEnabled and humanoid then
+            humanoid.WalkSpeed = SpeedValue
         end
     end
 end)
