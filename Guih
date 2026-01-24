@@ -7856,6 +7856,8 @@ end)
 -- MARSH FARM
 -- MARSH FARM (STABLE)
 
+-- MARSH FARM (USING SMART TELEPORT)
+
 getgenv().MarshFarm = false
 
 AutoFarmSection:Toggle({
@@ -7866,7 +7868,6 @@ AutoFarmSection:Toggle({
     end
 })
 
--- Services / Vars
 local player = game:GetService("Players").LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7886,7 +7887,7 @@ local SellCF       = CFrame.new(
     -0.043327149, 5.4667872e-08, 0.999060929
 )
 
--- Remotes / Prompts
+-- Prompts / Remotes
 local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
 local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
 local CookPrompt  = workspace.Map.Houses.WH1.Interior["Cooking Pot"]
@@ -7929,20 +7930,19 @@ task.spawn(function()
         if not getgenv().MarshFarm then continue end
         if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
 
-        -- Buy ingredients
-        char:SetPrimaryPartCFrame(BuyProductsCF)
+        -- BUY PRODUCTS
+        smartTeleport(BuyProductsCF)
         for _, item in ipairs({"Water", "Sugar Block Bag", "Gelatin"}) do
             StoreRemote:FireServer(item)
             task.wait(0.25)
         end
 
-        -- Buy house
-        char:SetPrimaryPartCFrame(BuyHouseCF)
-        task.wait(0.2)
+        -- BUY HOUSE
+        smartTeleport(BuyHouseCF)
         fireproximityprompt(HousePrompt, 0)
 
-        -- Cook
-        char:SetPrimaryPartCFrame(CookPotCF)
+        -- COOK
+        smartTeleport(CookPotCF)
 
         if EquipItem("Water") then
             fireproximityprompt(CookPrompt, 0)
@@ -7965,7 +7965,7 @@ task.spawn(function()
         end
 
         -- SELL
-        char:SetPrimaryPartCFrame(SellCF)
+        smartTeleport(SellCF)
         task.wait(0.02)
 
         local sellPrompt = workspace.Folders.NPCs["Lamont Bell"]
