@@ -7854,31 +7854,54 @@ end)
 
 -- =====================
 -- MARSH FARM
--- =====================
+-- MARSH FARM (STABLE)
+
 getgenv().MarshFarm = false
+
 AutoFarmSection:Toggle({
-    Name = "Marsh Farm Beta",
+    Name = "Marsh Farm",
     Default = false,
-    Callback = function(v) getgenv().MarshFarm = v end
+    Callback = function(v)
+        getgenv().MarshFarm = v
+    end
 })
 
-local BuyProductsCF = CFrame.new(510.7778,3.5872,599.1857)
-local BuyHouseCF = CFrame.new(1108.2331,10.7941,451.8186)
-local CookPotCF = CFrame.new(1142.4928,10.1050,452.5984)
+-- Services / Vars
+local player = game:GetService("Players").LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+player.CharacterAdded:Connect(function(c)
+    char = c
+end)
+
+-- CFrames
+local BuyProductsCF = CFrame.new(510.7778, 3.5872, 599.1857)
+local BuyHouseCF   = CFrame.new(1108.2331, 10.7941, 451.8186)
+local CookPotCF    = CFrame.new(1142.4928, 10.1050, 452.5984)
+local SellCF       = CFrame.new(
+    511.130402, 5.71616364, 595.711914,
+    0.999060929, 8.24730293e-08, 0.043327149,
+    -8.00269788e-08, 1, -5.81898547e-08,
+    -0.043327149, 5.4667872e-08, 0.999060929
+)
+
+-- Remotes / Prompts
 local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
 local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
-local CookPrompt = workspace.Map.Houses.WH1.Interior["Cooking Pot"].Attachment.ProximityPrompt
+local CookPrompt  = workspace.Map.Houses.WH1.Interior["Cooking Pot"]
+    .Attachment
+    .ProximityPrompt
 
 HousePrompt.HoldDuration = 0
 CookPrompt.HoldDuration = 0
 
+-- Helpers
 local function EquipItem(name)
-    local char = getChar()
     local bp = player.Backpack
-    local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
-    if item then
-        item.Parent = char
+    local tool = bp:FindFirstChild(name) or char:FindFirstChild(name)
+    if tool then
+        tool.Parent = char
         task.wait(0.1)
         return true
     end
@@ -7886,49 +7909,72 @@ local function EquipItem(name)
 end
 
 local function EquipMarshBag()
-    local char = getChar()
     local bp = player.Backpack
-    local bag = bp:FindFirstChild("Small Marshmallow Bag")
-        or bp:FindFirstChild("Medium Marshmallow Bag")
-        or bp:FindFirstChild("Large Marshmallow Bag")
+    local bag =
+        bp:FindFirstChild("Small Marshmallow Bag") or
+        bp:FindFirstChild("Medium Marshmallow Bag") or
+        bp:FindFirstChild("Large Marshmallow Bag")
+
     if bag then
         bag.Parent = char
+        task.wait(0.1)
         return true
     end
     return false
 end
 
+-- MAIN LOOP
 task.spawn(function()
-    while true do
-        local char = getChar()
-        if getgenv().MarshFarm then
-            -- Buy products (teleport)
-            smartTeleport(BuyProductsCF)
-            for _, item in ipairs({"Water","Sugar Block Bag","Gelatin"}) do
-                StoreRemote:FireServer(item)
-                local timer = 0
-                while not player.Backpack:FindFirstChild(item) and timer < 1 do
-                    task.wait(0.1)
-                    timer = timer + 0.1
-                end
-            end
+    while task.wait(0.1) do
+        if not getgenv().MarshFarm then continue end
+        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
 
-            -- Buy house
-            smartTeleport(BuyHouseCF)
-            task.wait(0.2)
-            fireproximityprompt(HousePrompt,0)
-
-            -- Cooking
-            smartTeleport(CookPotCF)
-            if EquipItem("Water") then fireproximityprompt(CookPrompt,0) task.wait(20) end
-            if EquipItem("Sugar Block Bag") then fireproximityprompt(CookPrompt,0) end
-            if EquipItem("Gelatin") then fireproximityprompt(CookPrompt,0) task.wait(61) end
-            if EquipItem("Empty Bag") then fireproximityprompt(CookPrompt,0) end
-
-            -- Equip Marsh Bag only
-            EquipMarshBag()
+        -- Buy ingredients
+        char:SetPrimaryPartCFrame(BuyProductsCF)
+        for _, item in ipairs({"Water", "Sugar Block Bag", "Gelatin"}) do
+            StoreRemote:FireServer(item)
+            task.wait(0.25)
         end
-        task.wait(0.1)
+
+        -- Buy house
+        char:SetPrimaryPartCFrame(BuyHouseCF)
+        task.wait(0.2)
+        fireproximityprompt(HousePrompt, 0)
+
+        -- Cook
+        char:SetPrimaryPartCFrame(CookPotCF)
+
+        if EquipItem("Water") then
+            fireproximityprompt(CookPrompt, 0)
+            task.wait(20)
+        end
+
+        if EquipItem("Sugar Block Bag") then
+            fireproximityprompt(CookPrompt, 0)
+            task.wait(1)
+        end
+
+        if EquipItem("Gelatin") then
+            fireproximityprompt(CookPrompt, 0)
+            task.wait(61)
+        end
+
+        if EquipItem("Empty Bag") then
+            fireproximityprompt(CookPrompt, 0)
+            task.wait(1)
+        end
+
+        -- SELL
+        char:SetPrimaryPartCFrame(SellCF)
+        task.wait(0.02)
+
+        local sellPrompt = workspace.Folders.NPCs["Lamont Bell"]
+            .UpperTorso
+            :FindFirstChild("ProximityPrompt")
+
+        if sellPrompt and EquipMarshBag() then
+            fireproximityprompt(sellPrompt, 0)
+        end
     end
 end)
 
