@@ -7871,8 +7871,19 @@ end)
 
 -- MARSH FARM (USING SMART TELEPORT)
 
-getgenv().MarshFarm = false
+-- LOAD TELEPORT METHOD (ORION / MrDarky)
+local MrDarkyModule = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/sbtpforwtv.lua"
+))()
 
+local function smartTeleport(cf)
+    if not cf then return end
+    MrDarkyModule.ExemptTeleport(cf.Position)
+    task.wait(0.2)
+end
+
+-- MARSH FARM
+getgenv().MarshFarm = false
 AutoFarmSection:Toggle({
     Name = "Marsh Farm",
     Default = false,
@@ -7881,14 +7892,6 @@ AutoFarmSection:Toggle({
     end
 })
 
-local player = game:GetService("Players").LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-player.CharacterAdded:Connect(function(c)
-    char = c
-end)
-
 -- CFrames
 local BuyProductsCF = CFrame.new(510.7778, 3.5872, 599.1857)
 local BuyHouseCF   = CFrame.new(1108.2331, 10.7941, 451.8186)
@@ -7896,26 +7899,39 @@ local CookPotCF    = CFrame.new(1142.4928, 10.1050, 452.5984)
 local SellCF       = CFrame.new(
     511.130402, 5.71616364, 595.711914,
     0.999060929, 8.24730293e-08, 0.043327149,
-    -8.00269788e-08, 1, -5.81898547e-08,
-    -0.043327149, 5.4667872e-08, 0.999060929
+   -8.00269788e-08, 1, -5.81898547e-08,
+   -0.043327149, 5.4667872e-08, 0.999060929
 )
 
--- Prompts / Remotes
+-- Remotes / Prompts
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StoreRemote = ReplicatedStorage.RemoteEvents.StorePurchase
+
 local HousePrompt = workspace.Map.APTS.WH1.Board.backboard.ProximityPrompt
 local CookPrompt  = workspace.Map.Houses.WH1.Interior["Cooking Pot"]
-    .Attachment
-    .ProximityPrompt
+    .Attachment.ProximityPrompt
 
 HousePrompt.HoldDuration = 0
 CookPrompt.HoldDuration = 0
 
--- Helpers
+-- SELL PROMPT (Lamont)
+local SellPrompt = workspace.Folders.NPCs["Lamont Bell"]
+    .UpperTorso
+    :FindFirstChild("ProximityPrompt")
+
+-- EQUIP HELPERS
+local player = game:GetService("Players").LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+
+player.CharacterAdded:Connect(function(c)
+    char = c
+end)
+
 local function EquipItem(name)
     local bp = player.Backpack
-    local tool = bp:FindFirstChild(name) or char:FindFirstChild(name)
-    if tool then
-        tool.Parent = char
+    local item = bp:FindFirstChild(name) or char:FindFirstChild(name)
+    if item then
+        item.Parent = char
         task.wait(0.1)
         return true
     end
@@ -7928,10 +7944,8 @@ local function EquipMarshBag()
         bp:FindFirstChild("Small Marshmallow Bag") or
         bp:FindFirstChild("Medium Marshmallow Bag") or
         bp:FindFirstChild("Large Marshmallow Bag")
-
     if bag then
         bag.Parent = char
-        task.wait(0.1)
         return true
     end
     return false
@@ -7941,20 +7955,25 @@ end
 task.spawn(function()
     while task.wait(0.1) do
         if not getgenv().MarshFarm then continue end
-        if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
 
-        -- BUY PRODUCTS
+        -- BUY INGREDIENTS (FIXED ORDER)
         smartTeleport(BuyProductsCF)
-        for _, item in ipairs({"Water", "Sugar Block Bag", "Gelatin"}) do
-            StoreRemote:FireServer(item)
-            task.wait(0.25)
-        end
+
+        StoreRemote:FireServer("Water")
+        task.wait(0.3)
+
+        StoreRemote:FireServer("Sugar Block Bag")
+        task.wait(0.3)
+
+        StoreRemote:FireServer("Gelatin")
+        task.wait(0.3)
 
         -- BUY HOUSE
         smartTeleport(BuyHouseCF)
         fireproximityprompt(HousePrompt, 0)
+        task.wait(0.5)
 
-        -- COOK
+        -- COOKING ORDER (WORKING ONE)
         smartTeleport(CookPotCF)
 
         if EquipItem("Water") then
@@ -7964,7 +7983,7 @@ task.spawn(function()
 
         if EquipItem("Sugar Block Bag") then
             fireproximityprompt(CookPrompt, 0)
-            task.wait(1)
+            task.wait(2)
         end
 
         if EquipItem("Gelatin") then
@@ -7977,16 +7996,11 @@ task.spawn(function()
             task.wait(1)
         end
 
-        -- SELL
-        smartTeleport(SellCF)
-        task.wait(0.02)
-
-        local sellPrompt = workspace.Folders.NPCs["Lamont Bell"]
-            .UpperTorso
-            :FindFirstChild("ProximityPrompt")
-
-        if sellPrompt and EquipMarshBag() then
-            fireproximityprompt(sellPrompt, 0)
+        -- SELL (ADDED, CLEAN)
+        if EquipMarshBag() and SellPrompt then
+            smartTeleport(SellCF)
+            task.wait(0.02)
+            fireproximityprompt(SellPrompt, 0)
         end
     end
 end)
