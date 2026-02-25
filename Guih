@@ -7714,7 +7714,6 @@ CombatSection:Button({
 -- =========================
 -- Load Orion teleport module
 local MrDarkyModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkMcSlark/Testing-Stuff2/refs/heads/main/SBExemptTeleport.lua"))()
-
 local function smartTeleport(cf)
     MrDarkyModule.ExemptTeleport(cf.Position)
     task.wait(0.2)
